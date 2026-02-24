@@ -1,7 +1,6 @@
 .git
 .gitignore
 .mvn
-src
 target/*.original
 target/surefire-reports
 target/failsafe-reports
