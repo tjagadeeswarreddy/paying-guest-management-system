@@ -1,0 +1,16 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Builds
+**/target/
+**/dist/
+**/node_modules/
+**/.m2/
+.git_old/

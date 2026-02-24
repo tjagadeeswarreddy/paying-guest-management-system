@@ -1,0 +1,11 @@
+.git
+.gitignore
+.mvn
+src
+target/*.original
+target/surefire-reports
+target/failsafe-reports
+node_modules
+.env
+.env.*
+README*
