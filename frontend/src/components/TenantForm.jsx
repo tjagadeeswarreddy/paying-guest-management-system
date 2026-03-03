@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { mergeRoomOptions } from '../constants/roomOptions';
 
 const initialState = {
@@ -27,8 +27,8 @@ const initialState = {
 
 const TenantForm = ({ selectedTenant, onSubmit, onCancel, roomOptions, accounts }) => {
   const [form, setForm] = useState(selectedTenant || initialState);
-  const rooms = mergeRoomOptions(roomOptions);
-  const accountList = accounts || [];
+  const rooms = useMemo(() => mergeRoomOptions(roomOptions), [roomOptions]);
+  const accountList = useMemo(() => accounts || [], [accounts]);
 
   useEffect(() => {
     setForm(selectedTenant ? { ...initialState, ...selectedTenant } : initialState);
@@ -63,7 +63,7 @@ const TenantForm = ({ selectedTenant, onSubmit, onCancel, roomOptions, accounts 
           depositPaidAmount: 0,
           paymentStatus: 'ON_TIME',
           dailyCollectionAmount: dailyCollectionValue,
-          dailyCollectionTransactionDate: form.dailyCollectionTransactionDate || form.joiningDate || '',
+          dailyCollectionTransactionDate: null,
           dailyCollectionAccountId: form.dailyCollectionAccountId ? Number(form.dailyCollectionAccountId) : null,
           dailyStayDays: dailyStayDaysValue
         }
@@ -183,15 +183,6 @@ const TenantForm = ({ selectedTenant, onSubmit, onCancel, roomOptions, accounts 
           />
         )}
         {dailyMode && (
-          <input
-            name="dailyCollectionTransactionDate"
-            type="date"
-            value={form.dailyCollectionTransactionDate || ''}
-            onChange={handleChange}
-            placeholder="Collection Transaction Date"
-          />
-        )}
-        {dailyMode && (
           <select
             name="dailyCollectionAccountId"
             value={form.dailyCollectionAccountId || ''}
@@ -254,4 +245,4 @@ const TenantForm = ({ selectedTenant, onSubmit, onCancel, roomOptions, accounts 
   );
 };
 
-export default TenantForm;
+export default React.memo(TenantForm);

@@ -11,7 +11,10 @@ public interface TenantService {
     TenantResponse checkoutTenant(Long tenantId);
     TenantResponse clearDailyCollection(Long tenantId);
     void deleteTenant(Long tenantId);
+    TenantResponse restoreTenant(Long tenantId);
+    void permanentlyDeleteTenant(Long tenantId);
     List<TenantResponse> getActiveTenants();
     List<TenantResponse> getDailyTenants();
+    List<TenantResponse> getDeletedTenants();
     List<TenantResponse> getAllTenants();
 }

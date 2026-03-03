@@ -80,6 +80,7 @@ public final class TenantMapper {
         response.setActive(tenant.isActive());
         response.setCheckoutDate(tenant.getCheckoutDate());
         response.setCreatedAt(tenant.getCreatedAt());
+        response.setUpdatedAt(tenant.getUpdatedAt());
         return response;
     }
 }

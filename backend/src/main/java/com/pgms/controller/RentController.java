@@ -1,11 +1,16 @@
 package com.pgms.controller;
 
+import com.pgms.config.CacheNames;
 import com.pgms.dto.DashboardSummaryResponse;
 import com.pgms.dto.RentRecordRequest;
 import com.pgms.dto.RentRecordResponse;
 import com.pgms.dto.RentRecordUpdateRequest;
+import com.pgms.dto.RentTransactionResponse;
 import com.pgms.service.RentService;
 import jakarta.validation.Valid;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,11 +30,25 @@ public class RentController {
     }
 
     @PostMapping
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.RENTS_DUE, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.RENTS_COLLECTED, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.RENT_DASHBOARD, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.TENANTS_ALL, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.TENANTS_ACTIVE, allEntries = true)
+    })
     public ResponseEntity<RentRecordResponse> upsertRent(@Valid @RequestBody RentRecordRequest request) {
         return ResponseEntity.ok(rentService.upsertRentRecord(request));
     }
 
     @PutMapping("/{recordId}")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.RENTS_DUE, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.RENTS_COLLECTED, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.RENT_DASHBOARD, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.TENANTS_ALL, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.TENANTS_ACTIVE, allEntries = true)
+    })
     public ResponseEntity<RentRecordResponse> updateRent(
             @PathVariable Long recordId,
             @Valid @RequestBody RentRecordUpdateRequest request
@@ -38,23 +57,45 @@ public class RentController {
     }
 
     @DeleteMapping("/{recordId}")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.RENTS_DUE, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.RENTS_COLLECTED, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.RENT_DASHBOARD, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.TENANTS_ALL, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.TENANTS_ACTIVE, allEntries = true)
+    })
     public ResponseEntity<Void> deleteRent(@PathVariable Long recordId) {
         rentService.deleteRentRecord(recordId);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/collected/{recordId}")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.RENTS_DUE, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.RENTS_COLLECTED, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.RENT_DASHBOARD, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.TENANTS_ALL, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.TENANTS_ACTIVE, allEntries = true)
+    })
     public ResponseEntity<Void> deleteCollected(@PathVariable Long recordId) {
         rentService.deleteCollectedRecord(recordId);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{recordId}/pay")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.RENTS_DUE, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.RENTS_COLLECTED, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.RENT_DASHBOARD, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.TENANTS_ALL, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.TENANTS_ACTIVE, allEntries = true)
+    })
     public ResponseEntity<RentRecordResponse> markPaid(@PathVariable Long recordId) {
         return ResponseEntity.ok(rentService.markAsPaid(recordId));
     }
 
     @GetMapping("/due")
+    @Cacheable(cacheNames = CacheNames.RENTS_DUE, key = "T(java.lang.String).valueOf(#from) + '|' + T(java.lang.String).valueOf(#to)")
     public ResponseEntity<List<RentRecordResponse>> getDueRents(
             @RequestParam(required = false) LocalDate from,
             @RequestParam(required = false) LocalDate to
@@ -63,11 +104,17 @@ public class RentController {
     }
 
     @GetMapping("/collected")
+    @Cacheable(cacheNames = CacheNames.RENTS_COLLECTED, key = "T(java.lang.String).valueOf(#from) + '|' + T(java.lang.String).valueOf(#to)")
     public ResponseEntity<List<RentRecordResponse>> getCollectedRents(
             @RequestParam(required = false) LocalDate from,
             @RequestParam(required = false) LocalDate to
     ) {
         return ResponseEntity.ok(rentService.getCollectedRentRecords(from, to));
+    }
+
+    @GetMapping("/{recordId}/transactions")
+    public ResponseEntity<List<RentTransactionResponse>> getRentTransactions(@PathVariable Long recordId) {
+        return ResponseEntity.ok(rentService.getRentTransactions(recordId));
     }
 
     @GetMapping(value = "/collected/export", produces = "text/csv")
@@ -85,6 +132,7 @@ public class RentController {
     }
 
     @GetMapping("/dashboard")
+    @Cacheable(cacheNames = CacheNames.RENT_DASHBOARD, key = "T(java.lang.String).valueOf(#from) + '|' + T(java.lang.String).valueOf(#to)")
     public ResponseEntity<DashboardSummaryResponse> getDashboard(
             @RequestParam(required = false) LocalDate from,
             @RequestParam(required = false) LocalDate to

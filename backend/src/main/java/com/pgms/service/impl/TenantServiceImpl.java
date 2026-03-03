@@ -15,6 +15,7 @@ import com.pgms.repository.CollectionRentRepository;
 import com.pgms.repository.DueRentRepository;
 import com.pgms.repository.TenantRepository;
 import com.pgms.service.TenantService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ import java.time.YearMonth;
 import java.util.List;
 
 @Service
+@ConditionalOnProperty(name = "app.data-provider", havingValue = "postgres", matchIfMissing = true)
 @Transactional
 public class TenantServiceImpl implements TenantService {
 
@@ -103,7 +105,26 @@ public class TenantServiceImpl implements TenantService {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with id: " + tenantId));
         tenant.setActive(false);
+        tenant.setCheckoutDate(LocalDate.now());
         tenantRepository.save(tenant);
+    }
+
+    @Override
+    public TenantResponse restoreTenant(Long tenantId) {
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with id: " + tenantId));
+        tenant.setActive(true);
+        tenant.setCheckoutDate(null);
+        Tenant saved = tenantRepository.save(tenant);
+        return TenantMapper.toResponse(saved);
+    }
+
+    @Override
+    public void permanentlyDeleteTenant(Long tenantId) {
+        if (!tenantRepository.existsById(tenantId)) {
+            throw new ResourceNotFoundException("Tenant not found with id: " + tenantId);
+        }
+        tenantRepository.deleteById(tenantId);
     }
 
     @Override
@@ -119,6 +140,15 @@ public class TenantServiceImpl implements TenantService {
     @Transactional(readOnly = true)
     public List<TenantResponse> getDailyTenants() {
         return tenantRepository.findAllActiveDailyTenantsOrderByCreatedAtDesc()
+                .stream()
+                .map(TenantMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TenantResponse> getDeletedTenants() {
+        return tenantRepository.findAllByActiveFalseOrderByCreatedAtDesc()
                 .stream()
                 .map(TenantMapper::toResponse)
                 .toList();

@@ -8,14 +8,17 @@ import com.pgms.exception.ResourceNotFoundException;
 import com.pgms.repository.AccountRepository;
 import com.pgms.repository.CollectionRentRepository;
 import com.pgms.repository.DueRentRepository;
+import com.pgms.repository.ExpenseRepository;
 import com.pgms.repository.TenantRepository;
 import com.pgms.service.AccountService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@ConditionalOnProperty(name = "app.data-provider", havingValue = "postgres", matchIfMissing = true)
 @Transactional
 public class AccountServiceImpl implements AccountService {
 
@@ -23,17 +26,20 @@ public class AccountServiceImpl implements AccountService {
     private final DueRentRepository dueRentRepository;
     private final CollectionRentRepository collectionRentRepository;
     private final TenantRepository tenantRepository;
+    private final ExpenseRepository expenseRepository;
 
     public AccountServiceImpl(
             AccountRepository accountRepository,
             DueRentRepository dueRentRepository,
             CollectionRentRepository collectionRentRepository,
-            TenantRepository tenantRepository
+            TenantRepository tenantRepository,
+            ExpenseRepository expenseRepository
     ) {
         this.accountRepository = accountRepository;
         this.dueRentRepository = dueRentRepository;
         this.collectionRentRepository = collectionRentRepository;
         this.tenantRepository = tenantRepository;
+        this.expenseRepository = expenseRepository;
     }
 
     @Override
@@ -71,6 +77,7 @@ public class AccountServiceImpl implements AccountService {
         collectionRentRepository.clearAccountByAccountId(accountId);
         tenantRepository.clearDailyCollectionAccountByAccountId(accountId);
         tenantRepository.clearJoiningCollectionAccountByAccountId(accountId);
+        expenseRepository.clearAccountByAccountId(accountId);
         accountRepository.delete(account);
     }
 

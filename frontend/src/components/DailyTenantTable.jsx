@@ -1,17 +1,22 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { toCurrency, toDate } from '../utils/format';
 
 const DailyTenantTable = ({ tenants, onEdit, onDelete, onCheckout }) => {
   const [selectedTenant, setSelectedTenant] = useState(null);
-  const totalDailyCollection = tenants.reduce(
-    (sum, tenant) => sum + Number(tenant.dailyCollectionAmount || 0),
-    0
+  const { totalDailyCollection, totalOutstandingDue } = useMemo(
+    () =>
+      tenants.reduce(
+        (acc, tenant) => {
+          const collected = Number(tenant.dailyCollectionAmount || 0);
+          const payable = Number(tenant.rent || 0);
+          acc.totalDailyCollection += collected;
+          acc.totalOutstandingDue += Math.max(payable - collected, 0);
+          return acc;
+        },
+        { totalDailyCollection: 0, totalOutstandingDue: 0 }
+      ),
+    [tenants]
   );
-  const totalOutstandingDue = tenants.reduce((sum, tenant) => {
-    const payable = Number(tenant.rent || 0);
-    const collected = Number(tenant.dailyCollectionAmount || 0);
-    return sum + Math.max(payable - collected, 0);
-  }, 0);
 
   return (
     <>
@@ -125,4 +130,4 @@ const DailyTenantTable = ({ tenants, onEdit, onDelete, onCheckout }) => {
   );
 };
 
-export default DailyTenantTable;
+export default React.memo(DailyTenantTable);

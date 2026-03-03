@@ -11,6 +11,7 @@ import java.util.List;
 
 public interface TenantRepository extends JpaRepository<Tenant, Long> {
     List<Tenant> findAllByActiveTrueOrderByCreatedAtDesc();
+    List<Tenant> findAllByActiveFalseOrderByCreatedAtDesc();
     @Query("select t from Tenant t where t.active = true and (t.dailyAccommodation = false or t.dailyAccommodation is null) order by t.createdAt desc")
     List<Tenant> findAllActiveRegularTenantsOrderByCreatedAtDesc();
     @Query("select t from Tenant t where t.active = true and t.dailyAccommodation = true order by t.createdAt desc")

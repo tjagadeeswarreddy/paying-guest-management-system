@@ -24,6 +24,9 @@ public interface DueRentRepository extends JpaRepository<DueRent, Long> {
             LocalDate to
     );
 
+    @Query("select d.tenant.id from DueRent d where d.billingMonth = :billingMonth")
+    List<Long> findTenantIdsByBillingMonth(@Param("billingMonth") LocalDate billingMonth);
+
     @Query("select coalesce(sum(d.dueAmount), 0) from DueRent d where d.billingMonth between :from and :to")
     BigDecimal sumDueBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
 

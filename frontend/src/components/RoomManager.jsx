@@ -268,4 +268,4 @@ const RoomManager = ({ rooms, tenants, onCreateOrUpdate, onDelete, onOpenTenant 
   );
 };
 
-export default RoomManager;
+export default React.memo(RoomManager);

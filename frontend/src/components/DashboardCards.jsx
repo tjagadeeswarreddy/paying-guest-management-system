@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { toCurrency } from '../utils/format';
 
-const DashboardCards = ({ summary }) => {
-  const cards = [
+const DashboardCards = ({ summary, onCardClick }) => {
+  const cards = useMemo(() => ([
     { label: 'Total Collection', value: toCurrency(summary.totalRentCollection) },
     { label: 'Daily Collection', value: toCurrency(summary.totalDailyCollection) },
     { label: 'Total Due', value: toCurrency(summary.totalDueAmount) },
@@ -15,12 +15,17 @@ const DashboardCards = ({ summary }) => {
     { label: 'Total Beds', value: summary.totalBeds || 0 },
     { label: 'Occupied Beds', value: summary.occupiedBeds || 0 },
     { label: 'Vacant Beds', value: summary.vacantBeds || 0 }
-  ];
+  ]), [summary]);
 
   return (
     <div className="cards-grid">
       {cards.map((card) => (
-        <article key={card.label} className="metric-card">
+        <article
+          key={card.label}
+          className="metric-card"
+          style={onCardClick ? { cursor: 'pointer' } : undefined}
+          onClick={() => onCardClick?.(card.label)}
+        >
           <p>{card.label}</p>
           <h3>{card.value}</h3>
         </article>
@@ -29,4 +34,4 @@ const DashboardCards = ({ summary }) => {
   );
 };
 
-export default DashboardCards;
+export default React.memo(DashboardCards);

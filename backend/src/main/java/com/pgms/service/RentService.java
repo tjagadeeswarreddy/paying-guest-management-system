@@ -4,6 +4,7 @@ import com.pgms.dto.DashboardSummaryResponse;
 import com.pgms.dto.RentRecordRequest;
 import com.pgms.dto.RentRecordResponse;
 import com.pgms.dto.RentRecordUpdateRequest;
+import com.pgms.dto.RentTransactionResponse;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -16,6 +17,7 @@ public interface RentService {
     RentRecordResponse markAsPaid(Long recordId);
     List<RentRecordResponse> getDueRentRecords(LocalDate from, LocalDate to);
     List<RentRecordResponse> getCollectedRentRecords(LocalDate from, LocalDate to);
+    List<RentTransactionResponse> getRentTransactions(Long recordId);
     byte[] exportCollectionReportCsv(LocalDate from, LocalDate to, Long accountId);
     DashboardSummaryResponse getDashboardSummary(LocalDate from, LocalDate to);
 }

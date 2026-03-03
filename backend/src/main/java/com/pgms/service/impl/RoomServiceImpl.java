@@ -7,12 +7,14 @@ import com.pgms.exception.BadRequestException;
 import com.pgms.exception.ResourceNotFoundException;
 import com.pgms.repository.RoomRepository;
 import com.pgms.service.RoomService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@ConditionalOnProperty(name = "app.data-provider", havingValue = "postgres", matchIfMissing = true)
 @Transactional
 public class RoomServiceImpl implements RoomService {
 

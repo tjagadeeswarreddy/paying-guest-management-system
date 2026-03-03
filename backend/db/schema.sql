@@ -88,3 +88,17 @@ CREATE TABLE IF NOT EXISTS rooms (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS expenses (
+    id BIGSERIAL PRIMARY KEY,
+    description VARCHAR(255) NOT NULL,
+    amount NUMERIC(12,2) NOT NULL,
+    transaction_date DATE NOT NULL,
+    tag VARCHAR(100),
+    account_id BIGINT REFERENCES accounts(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_expenses_transaction_date ON expenses(transaction_date);
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS tag VARCHAR(100);

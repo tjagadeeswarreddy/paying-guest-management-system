@@ -109,4 +109,4 @@ const AccountsManager = ({ accounts, onSave, onDelete }) => {
   );
 };
 
-export default AccountsManager;
+export default React.memo(AccountsManager);

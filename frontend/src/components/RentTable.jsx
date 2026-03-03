@@ -11,10 +11,18 @@ const RentTable = ({
   showTransaction,
   dateLabel = 'Month',
   enableSort = false,
-  accounts = []
+  accounts = [],
+  onRowClick = null,
+  onRemind = null,
+  onReceipt = null,
+  onPreviewReceipt = null,
+  receiptBusyKey = null
 }) => {
   const [editingId, setEditingId] = useState(null);
+  const [editingRecord, setEditingRecord] = useState(null);
   const [editForm, setEditForm] = useState({ dueAmount: '', paidAmount: '', accountId: '' });
+  const [editBaseline, setEditBaseline] = useState({ dueAmount: 0, paidAmount: 0 });
+  const [dueManuallyEdited, setDueManuallyEdited] = useState(false);
   const [payingId, setPayingId] = useState(null);
   const [payMode, setPayMode] = useState('FULL');
   const [payAmount, setPayAmount] = useState('');
@@ -65,16 +73,24 @@ const RentTable = ({
 
   const startEdit = (record) => {
     const key = `${record.collectionType || 'RENT_RECORD'}-${record.id}`;
+    const baseDue = Number(outstandingDue(record) || 0);
+    const basePaid = Number(record.paidAmount || 0);
     setEditingId(key);
+    setEditingRecord(record);
+    setEditBaseline({ dueAmount: baseDue, paidAmount: basePaid });
+    setDueManuallyEdited(false);
     setEditForm({
-      dueAmount: String(outstandingDue(record)),
-      paidAmount: String(Number(record.paidAmount || 0)),
+      dueAmount: String(baseDue),
+      paidAmount: String(basePaid),
       accountId: record.accountId ? String(record.accountId) : ''
     });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
+    setEditingRecord(null);
+    setEditBaseline({ dueAmount: 0, paidAmount: 0 });
+    setDueManuallyEdited(false);
     setEditForm({ dueAmount: '', paidAmount: '', accountId: '' });
   };
 
@@ -107,15 +123,13 @@ const RentTable = ({
   };
 
   const saveEdit = async () => {
-    if (!editingId || !onUpdate) return;
-    const [collectionType, id] = editingId.split('-', 2);
-    const recordId = Number.isNaN(Number(id)) ? id : Number(id);
+    if (!editingRecord || !onUpdate) return;
     await onUpdate(
-      { id: recordId, collectionType },
+      editingRecord,
       {
-      dueAmount: Number(editForm.dueAmount || 0),
-      paidAmount: Number(editForm.paidAmount || 0),
-      accountId: editForm.accountId ? Number(editForm.accountId) : null
+        dueAmount: Number(editForm.dueAmount || 0),
+        paidAmount: Number(editForm.paidAmount || 0),
+        accountId: editForm.accountId ? Number(editForm.accountId) : null
       }
     );
     cancelEdit();
@@ -151,6 +165,8 @@ const RentTable = ({
               {onUpdate && <th>Edit Rent</th>}
               {onDelete && <th>Delete Rent</th>}
               {showPayAction && <th>Action</th>}
+              {onRemind && <th>Remind</th>}
+              {(onReceipt || onPreviewReceipt) && <th>Receipt</th>}
             </tr>
           </thead>
           <tbody>
@@ -158,9 +174,14 @@ const RentTable = ({
               const rowKey = `${record.collectionType || 'RENT_RECORD'}-${record.id}`;
               const isEditing = editingId === rowKey;
               const isPaying = payingId === rowKey;
+              const isReceiptBusy = receiptBusyKey === rowKey;
               const dueBalance = outstandingDue(record);
               return (
-              <tr key={rowKey}>
+              <tr
+                key={rowKey}
+                onClick={() => onRowClick && onRowClick(record)}
+                style={onRowClick ? { cursor: 'pointer' } : undefined}
+              >
                 <td data-label={dateLabel}>{toDate(record.billingMonth)}</td>
                 <td data-label="Name">{record.tenantName}</td>
                 <td data-label="Room">{record.roomNumber}</td>
@@ -170,7 +191,10 @@ const RentTable = ({
                       type="number"
                       min="0"
                       value={editForm.dueAmount}
-                      onChange={(e) => setEditForm((prev) => ({ ...prev, dueAmount: e.target.value }))}
+                      onChange={(e) => {
+                        setDueManuallyEdited(true);
+                        setEditForm((prev) => ({ ...prev, dueAmount: e.target.value }));
+                      }}
                     />
                   ) : (
                     toCurrency(outstandingDue(record))
@@ -182,7 +206,21 @@ const RentTable = ({
                       type="number"
                       min="0"
                       value={editForm.paidAmount}
-                      onChange={(e) => setEditForm((prev) => ({ ...prev, paidAmount: e.target.value }))}
+                      onChange={(e) => {
+                        const nextPaid = Number(e.target.value || 0);
+                        setEditForm((prev) => {
+                          if (dueManuallyEdited) {
+                            return { ...prev, paidAmount: e.target.value };
+                          }
+                          const paidDelta = nextPaid - Number(editBaseline.paidAmount || 0);
+                          const autoDue = Math.max(Number(editBaseline.dueAmount || 0) - paidDelta, 0);
+                          return {
+                            ...prev,
+                            paidAmount: e.target.value,
+                            dueAmount: String(autoDue)
+                          };
+                        });
+                      }}
                     />
                   ) : (
                     toCurrency(record.paidAmount)
@@ -265,12 +303,52 @@ const RentTable = ({
                     )}
                   </td>
                 )}
+                {onRemind && (
+                  <td data-label="Remind">
+                    <button
+                      className="secondary"
+                      onClick={() => onRemind(record)}
+                    >
+                      Remind
+                    </button>
+                  </td>
+                )}
+                {(onReceipt || onPreviewReceipt) && (
+                  <td data-label="Receipt">
+                    <div className="actions">
+                      {onPreviewReceipt && (
+                        <button
+                          className="secondary"
+                          disabled={isReceiptBusy}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onPreviewReceipt(record);
+                          }}
+                        >
+                          {isReceiptBusy ? 'Working...' : 'Preview'}
+                        </button>
+                      )}
+                      {onReceipt && (
+                        <button
+                          className="secondary"
+                          disabled={isReceiptBusy}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onReceipt(record);
+                          }}
+                        >
+                          {isReceiptBusy ? 'Working...' : 'Send'}
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                )}
               </tr>
               );
             })}
             {sortedRecords.length === 0 && (
               <tr>
-                <td colSpan={7 + (showPayAction ? 1 : 0) + (onUpdate ? 1 : 0) + (onDelete ? 1 : 0) + (showTransaction ? 1 : 0)} className="empty-state">No records found for selected range.</td>
+                <td colSpan={7 + (showPayAction ? 1 : 0) + (onUpdate ? 1 : 0) + (onDelete ? 1 : 0) + (showTransaction ? 1 : 0) + (onRemind ? 1 : 0) + ((onReceipt || onPreviewReceipt) ? 1 : 0)} className="empty-state">No records found for selected range.</td>
               </tr>
             )}
           </tbody>
@@ -280,4 +358,4 @@ const RentTable = ({
   );
 };
 
-export default RentTable;
+export default React.memo(RentTable);

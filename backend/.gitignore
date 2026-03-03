@@ -2,6 +2,13 @@
 .env
 .env.*
 !.env.example
+firebase-service-account.json
+firebase-service-account
+*service-account*.json
 
 # Build output
 target/
+
+# Local import/debug artifacts
+tenant_import_report.json
+tenant_import_fallback_report.json
